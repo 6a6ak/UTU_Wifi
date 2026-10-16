@@ -144,6 +144,13 @@ def wait_network_file(interface, expected, timeout=10):
         time.sleep(0.5)
 
 
+def write_network(path, interface):
+    write_private(path, network_config(interface))
+    # networkd runs as systemd-network, not root. This file has no credentials;
+    # the separate supplicant configuration must remain root-only (0600).
+    os.chmod(path, 0o644)
+
+
 def connect_networkd(interface, ssid, password):
     unit = f'utu-wifi-{interface}.service'
     conf = Path(f'/etc/wpa_supplicant/utu-{interface}.conf')
@@ -160,6 +167,7 @@ def connect_networkd(interface, ssid, password):
     if not was_active and run('wpa_cli', '-i', interface, 'ping', check=False).stdout.strip() == 'PONG':
         raise RuntimeError('Another supplicant owns this interface; no service was stopped.')
     previous = {path: path.read_text() if path.exists() else None for path in files}
+    previous_modes = {path: path.stat().st_mode & 0o777 for path in files if path.exists()}
     executable = shutil.which('wpa_supplicant')
     if not executable:
         raise RuntimeError('wpa_supplicant is missing.')
@@ -168,7 +176,7 @@ def connect_networkd(interface, ssid, password):
         if was_active:
             run('systemctl', 'stop', unit)
         write_private(conf, contents)
-        write_private(network, network_config(interface))
+        write_network(network, interface)
         write_private(service, MARKER + '[Unit]\nDescription=UTU Wi-Fi authentication\n'
                       f'BindsTo=sys-subsystem-net-devices-{interface}.device\n'
                       f'After=sys-subsystem-net-devices-{interface}.device\n\n'
@@ -177,8 +185,8 @@ def connect_networkd(interface, ssid, password):
         run('systemctl', 'daemon-reload')
         run('networkctl', 'reload')
         run('networkctl', 'reconfigure', interface)
-        wait_network_file(interface, network)
         run('systemctl', 'start', unit)
+        wait_network_file(interface, network, timeout=45)
         wait_address(interface)
         run('systemctl', 'enable', unit)
     except (Exception, KeyboardInterrupt):
@@ -191,6 +199,7 @@ def connect_networkd(interface, ssid, password):
                 path.unlink(missing_ok=True)
             else:
                 write_private(path, original)
+                os.chmod(path, previous_modes[path])
         run('systemctl', 'daemon-reload', check=False)
         run('networkctl', 'reload', check=False)
         run('networkctl', 'reconfigure', interface, check=False)

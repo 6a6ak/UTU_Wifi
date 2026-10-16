@@ -92,6 +92,9 @@ BSS 00:11:22:33:44:88(on wlan0)
                     wifi.connect_networkd('wlan0', 'home', 'password123')
                     self.assertIn('psk=', paths[0].read_text())
             self.assertIn(('networkctl', 'reconfigure', 'wlan0'), commands)
+            start_index = commands.index(('systemctl', 'start', 'utu-wifi-wlan0.service'))
+            status_index = next(i for i, cmd in enumerate(commands) if cmd[:2] == ('networkctl', '--no-pager'))
+            self.assertLess(start_index, status_index)
             for command in commands:
                 self.assertNotIn('password123', ' '.join(command))
                 self.assertNotIn('netplan', command)
@@ -123,6 +126,15 @@ BSS 00:11:22:33:44:88(on wlan0)
         name = '00-00-utu-wlp3s0b1.network'
         for default in ('00-netplan-wifi.network', '00-default.network', '10-netplan-wlan0.network'):
             self.assertLess(name, default)
+
+    def test_network_definition_readable_but_contains_no_secret(self):
+        path = Path('/etc/systemd/network/00-00-utu-wlan0.network')
+        with patch.object(wifi, 'write_private') as write, patch.object(wifi.os, 'chmod') as chmod:
+            wifi.write_network(path, 'wlan0')
+            chmod.assert_called_once_with(path, 0o644)
+            content = write.call_args.args[1]
+            self.assertNotIn('psk=', content)
+            self.assertNotIn('password', content)
 
     def test_already_connected_requires_no_prompt(self):
         with patch.object(wifi, 'active', side_effect=[False, True]), \
