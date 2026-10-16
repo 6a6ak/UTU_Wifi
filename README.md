@@ -1,14 +1,12 @@
-# راه‌اندازی خودکار وای‌فای
+# UTU Wi-Fi
 
-این پروژه برای آماده‌کردن کارت بی‌سیم و اتصال به وای‌فای در اوبونتو و سیستم‌های مبتنی بر دبیان است. برنامه ابزارهای لازم را نصب می‌کند، رابط بی‌سیم را پیدا و فعال می‌کند، شبکه‌های اطراف را نشان می‌دهد و پس از انتخاب شبکه، رمز را می‌گیرد و برای اتصال تلاش می‌کند.
+Automatic Wi-Fi preparation, diagnosis, and connection for Ubuntu and Debian-based systems. Run the program, select a network by number, and enter its password. It installs missing tools, detects and enables the wireless interface, and handles known BCM4331 firmware and driver initialization failures.
 
-هدف این است که برای مشکلات شناخته‌شده، مجبور نباشید دستورهای نصب میان‌افزار، بارگذاری راه‌انداز یا فعال‌کردن رابط را جداگانه اجرا کنید.
+**The existing internet route and DNS configuration are preserved.** This tool adds a Wi-Fi connection; it does not automatically make Wi-Fi the server's primary internet connection.
 
-**نکتهٔ مهم:** این ابزار اتصال بی‌سیم را به سیستم اضافه می‌کند؛ مسیر اینترنت و تنظیمات نام‌یابی فعلی را خودکار به وای‌فای منتقل نمی‌کند. بنابراین اتصال موفق به وای‌فای، به‌تنهایی به معنای عبور اینترنت سرور از وای‌فای نیست.
+## Quick start
 
-## شروع سریع
-
-### اولین دریافت روی سرور
+### First installation
 
 ```bash
 git clone https://github.com/6a6ak/UTU_Wifi.git
@@ -16,148 +14,112 @@ cd UTU_Wifi
 bash index.sh
 ```
 
-### به‌روزرسانی نسخهٔ قبلی
+### Update an existing checkout
 
-داخل پوشهٔ پروژه اجرا کنید:
+Run inside the project directory:
 
 ```bash
 git pull origin main
 bash index.sh
 ```
 
-اگر هنوز داخل پوشهٔ پروژه نیستید، ابتدا وارد آن شوید:
+If needed, enter the directory first. Use the location where you cloned the repository; for example:
 
 ```bash
 cd ~/codes/UTU_Wifi
 ```
 
-مسیر بالا نمونه است؛ مسیر واقعی محل دریافت مخزن خودتان را استفاده کنید.
+### What happens next
 
-### بعد از اجرا چه می‌بینید؟
+1. Missing tools are installed when necessary.
+2. The wireless interface is detected and prepared. Known BCM4331 driver and firmware problems are checked when no interface exists.
+3. Nearby networks are listed with a number, signal strength, and security type.
+4. Enter the **network number**, then its Wi-Fi password. Password characters are hidden.
+5. The program checks Wi-Fi association and IPv4 address assignment, then reports the result.
 
-۱. اگر ابزاری نصب نباشد، برنامه برای نصب آن تلاش می‌کند.
+Sudo may also request your server account password for administrative operations. That is separate from the Wi-Fi password. The automatic flow does not ask for a separate YES confirmation at every step.
 
-۲. رابط بی‌سیم تشخیص داده و آماده می‌شود. مشکل شناخته‌شدهٔ راه‌انداز و میان‌افزار کارت برادکام نیز در همین مسیر بررسی می‌شود.
+Choose `0` to enter a hidden or missing network's SSID manually. This manual entry path assumes a WPA personal network.
 
-۳. فهرست شبکه‌ها همراه با شماره، قدرت سیگنال و نوع امنیت نمایش داده می‌شود.
+## Requirements and support
 
-۴. شمارهٔ شبکه را وارد می‌کنید و رمز وای‌فای را می‌زنید. هنگام ورود رمز، نویسه‌ها نمایش داده نمی‌شوند.
+- Ubuntu or a Debian-based Linux system with `apt-get`. The hardware-specific repair path targets Ubuntu.
+- Administrative access through root or sudo.
+- An existing internet connection when packages or firmware must be downloaded.
+- A wireless adapter and a compatible kernel driver.
+- Exactly one supported network manager active: **NetworkManager** or **systemd-networkd**.
 
-۵. برنامه اتصال و دریافت نشانی نسخهٔ چهار اینترنت را بررسی می‌کند و نتیجه را نشان می‌دهد.
+If both managers are active, or neither is active, automatic connection stops rather than changing managers or guessing ownership.
 
-ممکن است برای نصب ابزارها یا تنظیم رابط، رمز حساب کاربری سرور هم درخواست شود. این رمز با رمز وای‌فای متفاوت است. جریان خودکار برای هر مرحله تأیید جداگانه نمی‌خواهد.
+General interface preparation works with existing wireless interfaces. **Hardware-specific automatic driver and firmware repair currently targets Broadcom BCM4331 [14e4:4331].** Unsupported hardware, physical faults, and every possible kernel/driver combination cannot be repaired automatically.
 
-اگر شبکه در فهرست نیست، گزینهٔ صفر اجازه می‌دهد نام شبکهٔ مخفی را دستی وارد کنید. این مسیر برای شبکهٔ شخصی رمزدار در نظر گرفته شده است.
+## Automatic preparation
 
-## پیش‌نیازها و پشتیبانی
+### Install missing tools
 
-- سیستم لینوکس مبتنی بر اوبونتو یا دبیان با مدیر بستهٔ سازگار؛ مسیر تعمیر اختصاصی کارت برادکام برای اوبونتو نوشته شده است.
-- دسترسی مدیریتی برای نصب بسته‌ها و آماده‌کردن رابط.
-- اتصال اینترنت موجود، در صورت نیاز به دریافت بسته یا میان‌افزار.
-- کارت بی‌سیم و راه‌انداز سازگار با هستهٔ سیستم.
-- دقیقاً یکی از دو مدیر شبکهٔ زیر باید فعال باشد:
+The program checks command availability and installs missing packages:
 
-```text
-NetworkManager
-systemd-networkd
-```
+| Command | Package |
+| --- | --- |
+| `iw` | `iw` |
+| `iwlist` | `wireless-tools` |
+| `ip` | `iproute2` |
+| `lspci` | `pciutils` |
+| `rfkill` | `rfkill` |
+| `modprobe`, `modinfo` | `kmod` |
 
-اگر هر دو فعال باشند یا هیچ‌کدام فعال نباشند، برنامه اتصال خودکار را متوقف می‌کند و مدیر شبکه را تغییر نمی‌دهد.
+Connection setup also installs `python3` and, for networkd, `wpasupplicant` if missing. Package and download errors remain visible and stop the relevant workflow. Package operations set `NEEDRESTART_MODE=l` to suppress automatic service restarts by needrestart.
 
-نصب و فعال‌کردن ابزارها برای کارت‌های دارای رابط بی‌سیم قابل استفاده است. **تعمیر خودکار اختصاصی راه‌انداز و میان‌افزار، فعلاً کارت زیر را هدف می‌گیرد:**
+### Detect and enable the interface
 
-```text
-Broadcom BCM4331 [14e4:4331]
-```
+Wireless interfaces are discovered through sysfs; no interface name is hardcoded. The automatic flow clears a software block on the selected radio and brings its interface up.
 
-این پروژه تعمیر همهٔ کارت‌ها، خرابی فیزیکی یا هر ترکیب راه‌انداز و هسته را تضمین نمی‌کند. آزمون‌های نرم‌افزاری جای آزمایش روی سخت‌افزار واقعی را نمی‌گیرند.
-
-## برنامه چه کارهایی را خودکار انجام می‌دهد؟
-
-### نصب ابزارهای مفقود
-
-تنها ابزارهای مفقود از طریق مدیر بسته نصب می‌شوند. نگاشت ابزارها به بسته‌ها:
-
-```text
-iw          -> iw
-iwlist      -> wireless-tools
-ip          -> iproute2
-lspci       -> pciutils
-rfkill      -> rfkill
-modprobe    -> kmod
-modinfo     -> kmod
-```
-
-برای اتصال، در صورت نیاز مفسر پایتون و ابزار احراز هویت بی‌سیم نیز نصب می‌شوند:
-
-```text
-python3
-wpasupplicant
-```
-
-خطاهای دریافت بسته، مخزن و نصب نمایش داده می‌شوند و شکست مرحله باعث توقف همان روند می‌شود. برای جلوگیری از بازراه‌اندازی خودکار سرویس‌ها توسط ابزار بررسی سرویس‌های نیازمند راه‌اندازی مجدد، عملیات نصب با تنظیم زیر اجرا می‌شود:
-
-```text
-NEEDRESTART_MODE=l
-```
-
-### تشخیص و آماده‌کردن رابط
-
-نام رابط ثابت نیست. برنامه رابط بی‌سیم واقعی سیستم را پیدا می‌کند، مسدودبودن نرم‌افزاری رادیوی همان رابط را رفع می‌کند و رابط را فعال می‌کند.
-
-اگر چند رابط بی‌سیم وجود داشته باشد، باید رابط موردنظر را صریح انتخاب کنید. نام زیر فقط نمونه است:
+If multiple adapters exist, choose one explicitly. Replace the example name with your interface:
 
 ```bash
 WIFI_INTERFACE=wlan0 bash index.sh
 ```
 
-مسدودبودن سخت‌افزاری رادیو با نرم‌افزار رفع نمی‌شود؛ در این حالت برنامه متوقف می‌شود تا کلید فیزیکی یا تنظیمات میان‌افزار دستگاه بررسی شود.
+A hardware radio block cannot be cleared by software. Enable the physical switch or BIOS radio setting before retrying.
 
-### تعمیر کارت برادکام پشتیبانی‌شده
+### Repair the supported Broadcom adapter
 
-اگر رابط بی‌سیم ساخته نشده باشد، برنامه وضعیت راه‌انداز، میان‌افزار، فهرست منع بارگذاری و تعارض راه‌اندازها را بررسی می‌کند. در صورت نیاز، بستهٔ ماژول متناسب با هسته و بستهٔ میان‌افزار را نصب می‌کند. برای دریافت میان‌افزار ممکن است بخش مربوط از مخازن اوبونتو نیز فعال شود.
+When no wireless interface exists, the program checks module availability, firmware, module blacklists, and conflicting drivers. When necessary, it installs the matching Ubuntu extra-modules package and firmware installer:
 
 ```text
 linux-modules-extra-<kernel-version>
 firmware-b43-installer
-multiverse
 ```
 
-اگر راه‌انداز قبلاً به علت نبود میان‌افزار شکست خورده باشد، پس از فراهم‌شدن فایل لازم، فقط همان راه‌انداز دوباره بارگذاری می‌شود؛ این کار تنها هنگامی انجام می‌شود که هیچ رابط بی‌سیمی وجود نداشته باشد.
+Ubuntu multiverse may be enabled to obtain the firmware installer. This requires access to the configured package repositories and firmware downloads.
+
+If b43 failed before firmware was installed, the program can retry that module after the required firmware is available, **only when no wireless interfaces exist**:
 
 ```bash
 rmmod b43
 modprobe b43
 ```
 
-ماژول‌های گذرگاه، کارت کابلی و وابستگی‌های دیگر به این منظور حذف نمی‌شوند. تعارض راه‌انداز، منع صریح بارگذاری یا هستهٔ ناسازگار به‌صورت خطا گزارش می‌شود؛ برنامه این تنظیمات را حدسی تغییر نمی‌دهد.
+It does not remove bcma, ssb, Ethernet modules, or other dependencies. Conflicting drivers, explicit blacklists, and unsupported kernels produce a clear stop rather than an automatic replacement or blacklist edit.
 
-## اتصال چگونه انجام می‌شود؟
+## How connection works
 
-### حالت مدیر شبکهٔ دسکتاپ
+### NetworkManager
 
-```text
-NetworkManager
-```
+The program creates a new Wi-Fi profile and uses nmcli's interactive secret prompt. A failed connection removes the new profile. After success, autoconnection is enabled for that profile.
 
-برنامه یک نمایهٔ بی‌سیم جدید ایجاد می‌کند و رمز را از طریق درخواست امن ابزار همان مدیر شبکه می‌گیرد. اگر اتصال ناموفق باشد، نمایهٔ تازه حذف می‌شود. پس از موفقیت، اتصال خودکار نمایه فعال می‌شود.
+### systemd-networkd
 
-### حالت سرویس شبکهٔ سیستمی
-
-```text
-systemd-networkd
-```
-
-برنامه برای همان رابط، یک فایل شبکه و یک سرویس احراز هویت ایجاد می‌کند. سپس تعریف شبکه را بارگذاری و رابط بی‌سیم انتخاب‌شده را دوباره پیکربندی می‌کند.
+The program creates a network definition and an authentication service for the selected interface, reloads network definitions, and reconfigures that Wi-Fi link:
 
 ```text
 networkctl reload
 networkctl reconfigure <interface>
 ```
 
-در مسیر خودکار، اعمال سراسری تنظیمات نت‌پلن و بازراه‌اندازی سرویس مدیر شبکه انجام نمی‌شود. با این حال، بارگذاری مجدد تعریف‌ها می‌تواند تغییرات معوق مدیر سیستم در فایل‌های دیگر را نیز دریافت کند؛ هم‌زمان تنظیمات شبکه را با ابزار دیگری تغییر ندهید.
+The automatic flow does not run global Netplan apply/try or restart systemd-networkd. A networkctl reload can also pick up unrelated pending administrator changes, so avoid concurrent network configuration work.
 
-فایل‌های مخصوص رابط در مسیرهای زیر قرار می‌گیرند. عبارت جای‌نگهدار با نام واقعی رابط عوض می‌شود:
+Per-interface files are stored at these paths; `INTERFACE` is replaced with the actual interface name:
 
 ```text
 /etc/systemd/network/00-00-utu-INTERFACE.network
@@ -165,103 +127,137 @@ networkctl reconfigure <interface>
 /etc/systemd/system/utu-wifi-INTERFACE.service
 ```
 
-فایل کلید وای‌فای خصوصی می‌ماند. فایل تعریف شبکه، که هیچ رمزی ندارد، برای خوانده‌شدن توسط کاربر سرویس شبکه دسترسی خواندن عمومی دارد. فایل موجودی که متعلق به این ابزار نباشد، بازنویسی نمی‌شود. سرویس احراز هویت متعلق به ابزار دیگر نیز متوقف نمی‌شود.
+The supplicant configuration containing the Wi-Fi key remains private with mode `0600`. The network definition contains no credentials and uses mode `0644` so the systemd-network user can read it.
 
-در شکست اتصال، برنامه برای برگرداندن فایل‌ها و وضعیت سرویس مخصوص خودش به حالت قبلی تلاش می‌کند. بعد از اتصال موفق، سرویس برای راه‌اندازی‌های بعدی سیستم فعال می‌شود.
+Existing external files at these paths are not overwritten. A supplicant owned by another service is not stopped. On connection failure, the program attempts to restore its previous per-interface files and service state. Successful connections enable the authentication service for subsequent boots.
 
-## حفظ اتصال فعلی و رمزها
+## Existing connections and credentials
 
-- مدیر شبکه خودکار عوض، نصب یا فعال نمی‌شود.
-- تنظیمات کارت کابلی و تونل فعلی مستقیماً ویرایش نمی‌شوند.
-- مسیر پیش‌فرض و نام‌یابی دریافتی از وای‌فای پذیرفته نمی‌شود تا مسیر اینترنت فعلی حفظ شود.
-- در صورت مشاهدهٔ اتصال برقرار روی رابط بی‌سیم، برنامه آن را حفظ می‌کند و اتصال دیگری جایگزین نمی‌کند.
-- راه‌اندازی مجدد سیستم خودکار نیست.
-- رمز در آرگومان دستورها قرار نمی‌گیرد.
+- The active network manager is not automatically replaced, installed, or enabled.
+- Ethernet and tunnel settings are not directly edited.
+- Wi-Fi DHCP default routes and DNS are ignored to preserve the current internet path. The networkd configuration also disables IPv6 router advertisements.
+- An already associated wireless interface is left connected.
+- The server is never rebooted automatically.
+- Passwords are not passed as command-line arguments.
 
-در حالت سرویس شبکهٔ سیستمی، به‌جای متن رمز، کلید مشتق‌شده ذخیره می‌شود. این کلید همچنان یک راز قابل استفاده برای اتصال است و فایلش با دسترسی زیر نگهداری می‌شود:
+The networkd backend stores a derived WPA PSK rather than the plaintext passphrase. **That PSK is still a usable credential.** Keep connection files and any output containing credentials private.
 
-```text
-0600
-```
+The Wi-Fi IPv4 address is usable on its local subnet. Making Wi-Fi the primary internet route is a separate administrator action.
 
-فایل‌های اتصال و خروجی‌هایی که ممکن است حاوی رمز باشند را عمومی منتشر نکنید.
+## Commands
 
-## فرمان‌ها و منوی اختیاری
+| Command | Behavior |
+| --- | --- |
+| `bash index.sh` | Automatic preparation and connection |
+| `bash index.sh --setup` | Same automatic flow |
+| `bash index.sh --connect` | Same automatic flow |
+| `bash index.sh --diagnose` | Read-only diagnostic report |
+| `bash index.sh --install` | Install missing tools, then diagnose |
+| `bash index.sh --repair` | Manual repair with step-by-step confirmations |
+| `bash index.sh --menu` | Open the optional menu |
+| `bash index.sh --help` | Show available options |
 
-اجرای معمول، راه‌اندازی و اتصال خودکار را آغاز می‌کند:
+Installing tools does not itself create a missing hardware interface. Diagnosis returns a nonzero status when no wireless interface exists, even if tool installation succeeded.
 
-```bash
-bash index.sh
-```
+The optional menu provides:
 
-دو فرمان زیر نیز همان مسیر خودکار را اجرا می‌کنند:
+| Option | Action |
+| --- | --- |
+| `1`, `3` | Prepare the interface automatically and scan networks, frequencies, and signals |
+| `2` | Show saved NetworkManager Wi-Fi passwords when that manager is active and profiles are readable |
+| `4` | Diagnose Wi-Fi |
+| `5` | Run manual repair |
+| `6` | Run automatic preparation and connection |
+| `0` | Exit |
 
-```bash
-bash index.sh --setup
-bash index.sh --connect
-```
-
-فقط گزارش تشخیصی؛ بدون تغییر تنظیمات:
-
-```bash
-bash index.sh --diagnose
-```
-
-نصب ابزارهای مفقود و سپس تشخیص؛ نبود رابط همچنان با وضعیت خطا گزارش می‌شود:
-
-```bash
-bash index.sh --install
-```
-
-تعمیر دستی با تأیید مرحله‌به‌مرحله:
-
-```bash
-bash index.sh --repair
-```
-
-نمایش منوی امکانات:
-
-```bash
-bash index.sh --menu
-```
-
-در منو، گزینه‌های یک و سه پس از آماده‌کردن خودکار رابط، اسکن می‌کنند؛ گزینهٔ چهار گزارش تشخیصی، گزینهٔ پنج تعمیر مرحله‌ای، گزینهٔ شش اتصال خودکار و گزینهٔ صفر خروج است. گزینهٔ دو فقط در صورت فعال‌بودن مدیر شبکهٔ دسکتاپ و داشتن مجوز خواندن نمایه‌ها، رمزهای ذخیره‌شدهٔ آن را نشان می‌دهد.
-
-مسیر قدیمی اتصال با نت‌پلن برای استفادهٔ آگاهانه از کنسول نگه داشته شده و جزو راه‌اندازی خودکار نیست:
+The legacy Netplan connection workflow remains available for deliberate console use:
 
 ```bash
 bash index.sh --connect-netplan
 ```
 
-این مسیر ممکن است رابط‌های دیگر را نیز دوباره پیکربندی کند و در نشست راه‌دور تشخیص‌داده‌شده متوقف می‌شود.
+It is not used by automatic setup. It can reconfigure other interfaces and refuses detected SSH sessions.
 
-## خطاهای رایج
+## Troubleshooting
 
-### رابط بی‌سیم وجود ندارد
+### No wireless interface
 
-تشخیص‌داده‌شدن کارت در گذرگاه به معنای راه‌اندازی موفق بخش بی‌سیم نیست. برنامه برای کارت پشتیبانی‌شده، تعمیر شناخته‌شده را امتحان می‌کند. اگر متوقف شد، خروجی کامل تشخیص را بررسی کنید:
+PCI detection does not prove that the Wi-Fi driver initialized. For the supported adapter, the automatic flow attempts known repairs. If it stops, inspect its error and diagnostic report:
 
 ```bash
 bash index.sh --diagnose
 ```
 
-### رابط پایین است
+If kernel logs are restricted, diagnosis prints a privileged command to read them. The repair flow reads kernel logs with administrative access.
 
-در نسخهٔ فعلی، اجرای معمول برنامه و اسکن از منو، رابط را خودکار فعال می‌کند. اگر هنوز خطای پایین‌بودن رابط دیده می‌شود، نسخهٔ مخزن را به‌روز کنید؛ خطاهای راه‌انداز یا مسدودبودن رادیو نیز باید بررسی شوند.
+### Network is down
 
-### رمز اشتباه است یا نشانی دریافت نمی‌شود
+The current automatic flow and menu scans bring the wireless interface up. Update the repository if you still see the old manual-preparation message. Persistent failures can indicate a driver problem or blocked radio.
 
-رمز، نوع امنیت شبکه و فعال‌بودن تخصیص خودکار نشانی در مودم را بررسی کنید و دوباره برنامه را اجرا کنید. در مسیر سرویس شبکهٔ سیستمی، پس از چهل‌وپنج ثانیه انتظار ناموفق برای اتصال و نشانی، خطا گزارش می‌شود.
+### Wrong password or no IPv4 address
 
-### اتصال برقرار است ولی اینترنت از وای‌فای عبور نمی‌کند
+Check the password, network security type, and the access point's DHCP service, then rerun the program. The networkd path waits up to 45 seconds for association and an IPv4 address after selecting its network definition. Failures trigger an error and attempted rollback.
 
-این رفتار عمدی است: برنامه مسیر اینترنت سرور را خودکار تغییر نمی‌دهد. نشانی بی‌سیم برای دسترسی در زیرشبکهٔ محلی قابل استفاده است؛ جابه‌جاکردن مسیر اصلی اینترنت کار جداگانهٔ مدیر سیستم است.
+### Connected, but internet still uses Ethernet
 
-### نوع شبکه پشتیبانی نمی‌شود
+This is intentional. Wi-Fi does not replace the existing default route or DNS. Changing the server's primary internet connection requires separate configuration.
 
-شبکه‌های باز و شخصی رمزدار پشتیبانی می‌شوند. شبکهٔ سازمانی، رمزنگاری قدیمی، شبکهٔ صرفاً مبتنی بر نسل سوم امنیت بی‌سیم، ورود از صفحهٔ وب و نشانی‌دهی ثابت به تنظیمات متفاوت نیاز دارند. نام شبکه‌هایی که با رمزگذاری متنی پشتیبانی‌شده قابل نمایش نیستند، در فهرست نمی‌آید.
+### Unsupported authentication
 
-## آزمون‌های توسعه
+The wizard supports open and WPA personal networks. Enterprise authentication, WEP, WPA3-only networks, captive portal login, and static addressing require different configuration. Non-UTF-8 SSIDs are not listed.
+
+## Reported real-world connection
+
+A user reported successful connection on the supported Broadcom adapter after updating the repository, selecting a network, and entering its password:
+
+```text
+Connected on wlp3s0b1. IPv4: 192.168.88.245
+The existing internet default route and DNS are preserved.
+```
+
+This confirms association and IPv4 assignment in that run. The address is an example from that server and can differ on another machine or after DHCP renewal. The report does not establish internet access through Wi-Fi, remote reachability from other networks, or successful reconnection after reboot.
+
+## Verify connection after a planned reboot
+
+Successful setup enables the relevant service or profile for subsequent boots. There is no need to reboot immediately for verification. After your next planned reboot, check the connection using your actual interface name:
+
+```bash
+iw dev wlp3s0b1 link
+ip -4 -brief address show dev wlp3s0b1
+```
+
+The first command should show association with an access point. The second should show the assigned IPv4 address; it does not have to match the previous address.
+
+For systemd-networkd, check the tool's authentication service and interface status:
+
+```bash
+systemctl is-enabled utu-wifi-wlp3s0b1.service
+systemctl status utu-wifi-wlp3s0b1.service --no-pager
+networkctl status wlp3s0b1 --no-pager --full
+```
+
+For NetworkManager, check active profiles instead:
+
+```bash
+nmcli connection show --active
+```
+
+If connection fails, collect diagnostics. For the networkd backend, also inspect the per-interface service log:
+
+```bash
+bash index.sh --diagnose
+sudo journalctl -b -u utu-wifi-wlp3s0b1.service --no-pager -n 60
+```
+
+Retry preparation and connection with:
+
+```bash
+bash index.sh
+```
+
+An already associated wireless interface is preserved. Review diagnostic output before sharing it, and do not publish credential files.
+
+## Development checks
 
 ```bash
 bash -n index.sh
@@ -269,15 +265,13 @@ bash tests/wifi_test.sh
 python3 -m unittest discover -s tests -p 'test_*.py'
 ```
 
-آزمون‌ها عملیات مدیریتی را شبیه‌سازی می‌کنند و آماده‌سازی رابط، تلاش مجدد راه‌انداز، شکست نصب، تشخیص شبکه، حفاظت از رمز و بازگردانی اتصال ناموفق را بررسی می‌کنند. آزمون نمایهٔ قدیمی به کتابخانهٔ زیر نیاز دارد:
+Tests mock administrative operations and cover interface preparation, stale driver probe recovery, installation failures, scan parsing, credential handling, network-definition permissions, and rollback. The legacy Netplan profile tests require PyYAML.
 
-```text
-PyYAML
-```
+These checks do not replace validation on actual Ubuntu hardware.
 
-## نمونهٔ گزارش اولیهٔ کاربر
+## Original diagnostic baseline
 
-این خروجی وضعیت پیش از تعمیر را نشان می‌دهد و تأیید آزمایش نسخهٔ فعلی روی این سخت‌افزار نیست:
+User-provided state before repair:
 
 ```text
 Ubuntu 24.04.5 LTS
@@ -288,58 +282,3 @@ Wi-Fi: Broadcom BCM4331 [14e4:4331]
 Kernel driver: bcma-pci-bridge
 Interfaces: enp2s0f0, lo, tailscale0
 ```
-
-## نتیجهٔ اتصال واقعی گزارش‌شده
-
-کاربر پس از به‌روزرسانی، اجرای برنامه، انتخاب شبکه و واردکردن رمز، اتصال موفق روی کارت برادکام پشتیبانی‌شده را گزارش کرده است. نمونهٔ خروجی:
-
-```text
-Connected on wlp3s0b1. IPv4: 192.168.88.245
-The existing internet default route and DNS are preserved.
-```
-
-این نتیجه، برقراری ارتباط بی‌سیم و دریافت نشانی نسخهٔ چهار اینترنت را در همان اجرا تأیید می‌کند. نشانی بالا نمونهٔ همان سرور است و روی سیستم شما یا پس از تمدید اجارهٔ نشانی ممکن است متفاوت باشد.
-
-این گزارش به معنی تأیید عبور اینترنت از وای‌فای، دسترسی راه‌دور از هر شبکه، یا آزمایش اتصال پس از راه‌اندازی مجدد نیست. مسیر اینترنت فعلی طبق طراحی حفظ می‌شود.
-
-## بررسی اتصال بعد از روشن‌شدن دوباره
-
-پس از اتصال موفق، برنامه سرویس یا نمایهٔ مخصوص اتصال را برای اجراهای بعدی سیستم فعال می‌کند. برای بررسی، نیازی به راه‌اندازی مجدد فوری سرور نیست؛ بعد از راه‌اندازی مجدد برنامه‌ریزی‌شدهٔ خودتان، دستورهای زیر را اجرا کنید.
-
-نام رابط زیر مربوط به نمونهٔ گزارش‌شده است؛ در صورت تفاوت، نام رابط سیستم خودتان را جایگزین کنید:
-
-```bash
-iw dev wlp3s0b1 link
-ip -4 -brief address show dev wlp3s0b1
-```
-
-دستور اول باید ارتباط با نقطهٔ دسترسی را نشان دهد و دستور دوم باید نشانی دریافت‌شدهٔ رابط را نمایش دهد. ثابت‌ماندن نشانی قبلی الزامی نیست.
-
-برای حالت سرویس شبکهٔ سیستمی، فعال‌بودن سرویس اختصاصی برنامه و وضعیت اجرای آن را بررسی کنید:
-
-```bash
-systemctl is-enabled utu-wifi-wlp3s0b1.service
-systemctl status utu-wifi-wlp3s0b1.service --no-pager
-networkctl status wlp3s0b1 --no-pager --full
-```
-
-برای حالت مدیر شبکهٔ دسکتاپ، به‌جای سرویس اختصاصی بالا، نمایه‌های اتصال فعال را بررسی کنید:
-
-```bash
-nmcli connection show --active
-```
-
-اگر اتصال برقرار نشد، ابتدا گزارش تشخیصی برنامه را بگیرید. برای حالت سرویس شبکهٔ سیستمی، گزارش همان سرویس را هم بررسی کنید:
-
-```bash
-bash index.sh --diagnose
-sudo journalctl -b -u utu-wifi-wlp3s0b1.service --no-pager -n 60
-```
-
-برای تلاش دوباره با مسیر آماده‌سازی و اتصال خودکار، برنامه را اجرا کنید:
-
-```bash
-bash index.sh
-```
-
-اگر رابط از قبل متصل باشد، برنامه اتصال موجود را حفظ می‌کند. اگر خطا باقی ماند، خروجی تشخیصی و گزارش سرویس را بدون فایل‌های حاوی کلید یا رمز بررسی و ارائه کنید.
