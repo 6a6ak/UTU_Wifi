@@ -126,10 +126,30 @@ def write_private(path, content):
         stream.write(content)
 
 
+def wait_network_file(interface, expected, timeout=10):
+    """Reconfiguration is asynchronous; never infer ownership from truncated text."""
+    deadline = time.monotonic() + timeout
+    selected = '(not reported)'
+    while True:
+        status = run('networkctl', '--no-pager', '--full', 'status', interface).stdout
+        match = re.search(r'^\s*Network File:\s*(.+?)\s*$', status, re.M)
+        if match:
+            selected = match[1]
+            if selected == str(expected):
+                return
+        if time.monotonic() >= deadline:
+            raise RuntimeError(f'Wi-Fi network configuration was not selected. '
+                               f'Expected: {expected}; selected: {selected}. '
+                               'Only this attempt\'s per-interface changes will be rolled back.')
+        time.sleep(0.5)
+
+
 def connect_networkd(interface, ssid, password):
     unit = f'utu-wifi-{interface}.service'
     conf = Path(f'/etc/wpa_supplicant/utu-{interface}.conf')
-    network = Path(f'/etc/systemd/network/00-utu-{interface}.network')
+    # networkd uses the FIRST matching filename across all directories. Sort
+    # before common 00-netplan/00-default definitions without editing those files.
+    network = Path(f'/etc/systemd/network/00-00-utu-{interface}.network')
     service = Path('/etc/systemd/system') / unit
     files = (conf, network, service)
     for path in files:
@@ -157,9 +177,7 @@ def connect_networkd(interface, ssid, password):
         run('systemctl', 'daemon-reload')
         run('networkctl', 'reload')
         run('networkctl', 'reconfigure', interface)
-        status = run('networkctl', '--no-pager', 'status', interface).stdout
-        if str(network) not in status:
-            raise RuntimeError('An earlier networkd configuration owns this interface; automatic override refused.')
+        wait_network_file(interface, network)
         run('systemctl', 'start', unit)
         wait_address(interface)
         run('systemctl', 'enable', unit)

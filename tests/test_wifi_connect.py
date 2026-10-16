@@ -61,7 +61,7 @@ BSS 00:11:22:33:44:88(on wlan0)
             base = Path(directory)
             commands = []
             paths = [base / 'etc/wpa_supplicant/utu-wlan0.conf',
-                     base / 'etc/systemd/network/00-utu-wlan0.network',
+                     base / 'etc/systemd/network/00-00-utu-wlan0.network',
                      base / 'etc/systemd/system/utu-wifi-wlan0.service']
             if fail:
                 for path in paths:
@@ -70,7 +70,7 @@ BSS 00:11:22:33:44:88(on wlan0)
 
             def execute(*args, check=True):
                 commands.append(args)
-                output = str(paths[1]) if args[:2] == ('networkctl', '--no-pager') else ''
+                output = '  Network File: ' + str(paths[1]) if args[:2] == ('networkctl', '--no-pager') else ''
                 return subprocess.CompletedProcess(args, 0, stdout=output, stderr='')
 
             def write(path, content):
@@ -103,6 +103,26 @@ BSS 00:11:22:33:44:88(on wlan0)
 
     def test_networkd_failure_restores_files(self):
         self.exercise_networkd(fail=True)
+
+    def test_network_file_waits_for_reconfiguration(self):
+        expected = Path('/etc/systemd/network/00-00-utu-wlp3s0b1.network')
+        outputs = ['Network File: /run/systemd/network/00-netplan-default.network',
+                   'Network File: ' + str(expected)]
+        with patch.object(wifi, 'run', side_effect=[subprocess.CompletedProcess([], 0, text) for text in outputs]) as execute, \
+             patch.object(wifi.time, 'sleep'):
+            wifi.wait_network_file('wlp3s0b1', expected)
+        self.assertEqual(execute.call_count, 2)
+        self.assertIn('--full', execute.call_args.args)
+
+    def test_network_file_error_reports_actual_owner(self):
+        with patch.object(wifi, 'run', return_value=subprocess.CompletedProcess([], 0, 'Network File: /run/systemd/network/00-other.network')):
+            with self.assertRaisesRegex(RuntimeError, 'selected: /run/systemd/network/00-other.network'):
+                wifi.wait_network_file('wlan0', Path('/etc/systemd/network/00-00-utu-wlan0.network'), timeout=0)
+
+    def test_generated_file_precedes_common_defaults(self):
+        name = '00-00-utu-wlp3s0b1.network'
+        for default in ('00-netplan-wifi.network', '00-default.network', '10-netplan-wlan0.network'):
+            self.assertLess(name, default)
 
     def test_already_connected_requires_no_prompt(self):
         with patch.object(wifi, 'active', side_effect=[False, True]), \

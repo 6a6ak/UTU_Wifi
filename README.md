@@ -160,7 +160,7 @@ networkctl reconfigure <interface>
 فایل‌های مخصوص رابط در مسیرهای زیر قرار می‌گیرند. عبارت جای‌نگهدار با نام واقعی رابط عوض می‌شود:
 
 ```text
-/etc/systemd/network/00-utu-INTERFACE.network
+/etc/systemd/network/00-00-utu-INTERFACE.network
 /etc/wpa_supplicant/utu-INTERFACE.conf
 /etc/systemd/system/utu-wifi-INTERFACE.service
 ```
