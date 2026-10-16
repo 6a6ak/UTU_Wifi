@@ -1,63 +1,163 @@
-# Automatic Wi-Fi setup
+# راه‌اندازی خودکار وای‌فای
 
-On Ubuntu/Debian, update and run:
+این پروژه برای آماده‌کردن کارت بی‌سیم و اتصال به وای‌فای در اوبونتو و سیستم‌های مبتنی بر دبیان است. برنامه ابزارهای لازم را نصب می‌کند، رابط بی‌سیم را پیدا و فعال می‌کند، شبکه‌های اطراف را نشان می‌دهد و پس از انتخاب شبکه، رمز را می‌گیرد و برای اتصال تلاش می‌کند.
 
-```sh
+هدف این است که برای مشکلات شناخته‌شده، مجبور نباشید دستورهای نصب میان‌افزار، بارگذاری راه‌انداز یا فعال‌کردن رابط را جداگانه اجرا کنید.
+
+**نکتهٔ مهم:** این ابزار اتصال بی‌سیم را به سیستم اضافه می‌کند؛ مسیر اینترنت و تنظیمات نام‌یابی فعلی را خودکار به وای‌فای منتقل نمی‌کند. بنابراین اتصال موفق به وای‌فای، به‌تنهایی به معنای عبور اینترنت سرور از وای‌فای نیست.
+
+## شروع سریع
+
+### اولین دریافت روی سرور
+
+```bash
+git clone https://github.com/6a6ak/UTU_Wifi.git
+cd UTU_Wifi
+bash index.sh
+```
+
+### به‌روزرسانی نسخهٔ قبلی
+
+داخل پوشهٔ پروژه اجرا کنید:
+
+```bash
 git pull origin main
 bash index.sh
 ```
 
-The default flow now prepares Wi-Fi automatically, shows nearby networks, asks
-for a network number and the Wi-Fi password, then connects. Sudo may ask for the
-system account password once. There are no repeated YES prompts in this flow.
+اگر هنوز داخل پوشهٔ پروژه نیستید، ابتدا وارد آن شوید:
 
-```sh
-bash index.sh --setup
-bash index.sh --connect
+```bash
+cd ~/codes/UTU_Wifi
 ```
 
-Both commands run the same automatic flow. Use `--menu` for the old menu.
-Menu option 6 also runs the automatic flow. Scanning (options 1/3) now prepares
-the interface automatically instead of stopping with `Network is down`.
+مسیر بالا نمونه است؛ مسیر واقعی محل دریافت مخزن خودتان را استفاده کنید.
 
-## Automatic preparation
+### بعد از اجرا چه می‌بینید؟
 
-- Installs missing scanning, PCI, radio and module tools using apt.
-- Detects the wireless interface from sysfs; no fixed interface name.
-- For BCM4331 without an interface, checks b43 availability, module conflicts,
-  blacklists and firmware; installs the matching module/firmware packages when
-  necessary. Ubuntu multiverse can be enabled to obtain the firmware package.
-- If b43 previously failed before firmware installation, retries only b43 using
-  `rmmod b43` and `modprobe b43`, and only when no wireless interfaces exist.
-  It never removes bcma, ssb, Ethernet modules or other dependencies.
-- Unblocks the selected radio when software blocked, and brings the detected
-  Wi-Fi interface up. A physical/BIOS radio block is reported instead.
+۱. اگر ابزاری نصب نباشد، برنامه برای نصب آن تلاش می‌کند.
 
-Unknown hardware, incompatible kernels, conflicting drivers and explicit
-blacklists cause a clear stop rather than an unsafe driver replacement.
-For multiple adapters select one explicitly:
+۲. رابط بی‌سیم تشخیص داده و آماده می‌شود. مشکل شناخته‌شدهٔ راه‌انداز و میان‌افزار کارت برادکام نیز در همین مسیر بررسی می‌شود.
 
-```sh
+۳. فهرست شبکه‌ها همراه با شماره، قدرت سیگنال و نوع امنیت نمایش داده می‌شود.
+
+۴. شمارهٔ شبکه را وارد می‌کنید و رمز وای‌فای را می‌زنید. هنگام ورود رمز، نویسه‌ها نمایش داده نمی‌شوند.
+
+۵. برنامه اتصال و دریافت نشانی نسخهٔ چهار اینترنت را بررسی می‌کند و نتیجه را نشان می‌دهد.
+
+ممکن است برای نصب ابزارها یا تنظیم رابط، رمز حساب کاربری سرور هم درخواست شود. این رمز با رمز وای‌فای متفاوت است. جریان خودکار برای هر مرحله تأیید جداگانه نمی‌خواهد.
+
+اگر شبکه در فهرست نیست، گزینهٔ صفر اجازه می‌دهد نام شبکهٔ مخفی را دستی وارد کنید. این مسیر برای شبکهٔ شخصی رمزدار در نظر گرفته شده است.
+
+## پیش‌نیازها و پشتیبانی
+
+- سیستم لینوکس مبتنی بر اوبونتو یا دبیان با مدیر بستهٔ سازگار؛ مسیر تعمیر اختصاصی کارت برادکام برای اوبونتو نوشته شده است.
+- دسترسی مدیریتی برای نصب بسته‌ها و آماده‌کردن رابط.
+- اتصال اینترنت موجود، در صورت نیاز به دریافت بسته یا میان‌افزار.
+- کارت بی‌سیم و راه‌انداز سازگار با هستهٔ سیستم.
+- دقیقاً یکی از دو مدیر شبکهٔ زیر باید فعال باشد:
+
+```text
+NetworkManager
+systemd-networkd
+```
+
+اگر هر دو فعال باشند یا هیچ‌کدام فعال نباشند، برنامه اتصال خودکار را متوقف می‌کند و مدیر شبکه را تغییر نمی‌دهد.
+
+نصب و فعال‌کردن ابزارها برای کارت‌های دارای رابط بی‌سیم قابل استفاده است. **تعمیر خودکار اختصاصی راه‌انداز و میان‌افزار، فعلاً کارت زیر را هدف می‌گیرد:**
+
+```text
+Broadcom BCM4331 [14e4:4331]
+```
+
+این پروژه تعمیر همهٔ کارت‌ها، خرابی فیزیکی یا هر ترکیب راه‌انداز و هسته را تضمین نمی‌کند. آزمون‌های نرم‌افزاری جای آزمایش روی سخت‌افزار واقعی را نمی‌گیرند.
+
+## برنامه چه کارهایی را خودکار انجام می‌دهد؟
+
+### نصب ابزارهای مفقود
+
+تنها ابزارهای مفقود از طریق مدیر بسته نصب می‌شوند. نگاشت ابزارها به بسته‌ها:
+
+```text
+iw          -> iw
+iwlist      -> wireless-tools
+ip          -> iproute2
+lspci       -> pciutils
+rfkill      -> rfkill
+modprobe    -> kmod
+modinfo     -> kmod
+```
+
+برای اتصال، در صورت نیاز مفسر پایتون و ابزار احراز هویت بی‌سیم نیز نصب می‌شوند:
+
+```text
+python3
+wpasupplicant
+```
+
+خطاهای دریافت بسته، مخزن و نصب نمایش داده می‌شوند و شکست مرحله باعث توقف همان روند می‌شود. برای جلوگیری از بازراه‌اندازی خودکار سرویس‌ها توسط ابزار بررسی سرویس‌های نیازمند راه‌اندازی مجدد، عملیات نصب با تنظیم زیر اجرا می‌شود:
+
+```text
+NEEDRESTART_MODE=l
+```
+
+### تشخیص و آماده‌کردن رابط
+
+نام رابط ثابت نیست. برنامه رابط بی‌سیم واقعی سیستم را پیدا می‌کند، مسدودبودن نرم‌افزاری رادیوی همان رابط را رفع می‌کند و رابط را فعال می‌کند.
+
+اگر چند رابط بی‌سیم وجود داشته باشد، باید رابط موردنظر را صریح انتخاب کنید. نام زیر فقط نمونه است:
+
+```bash
 WIFI_INTERFACE=wlan0 bash index.sh
 ```
 
-## Connection and protection of the current link
+مسدودبودن سخت‌افزاری رادیو با نرم‌افزار رفع نمی‌شود؛ در این حالت برنامه متوقف می‌شود تا کلید فیزیکی یا تنظیمات میان‌افزار دستگاه بررسی شود.
 
-The active manager is preserved. If both NetworkManager and systemd-networkd are
-active, or neither is active, the wizard stops instead of guessing ownership.
-An already connected wireless interface is left connected.
+### تعمیر کارت برادکام پشتیبانی‌شده
 
-**NetworkManager:** creates a scoped Wi-Fi profile and uses nmcli's secret prompt.
-A failed connection removes the newly created profile.
+اگر رابط بی‌سیم ساخته نشده باشد، برنامه وضعیت راه‌انداز، میان‌افزار، فهرست منع بارگذاری و تعارض راه‌اندازها را بررسی می‌کند. در صورت نیاز، بستهٔ ماژول متناسب با هسته و بستهٔ میان‌افزار را نصب می‌کند. برای دریافت میان‌افزار ممکن است بخش مربوط از مخازن اوبونتو نیز فعال شود.
 
-**systemd-networkd:** uses a Wi-Fi-only `.network` file and an authentication
-service for the selected interface. It does not run Netplan apply/try, restart
-systemd-networkd, or touch Ethernet/Tailscale settings. `networkctl reload` loads
-the new definition and `networkctl reconfigure` targets the selected Wi-Fi link.
-As with any networkctl reload, unrelated pending administrator configuration
-changes can also be picked up; avoid concurrent network configuration work.
+```text
+linux-modules-extra-<kernel-version>
+firmware-b43-installer
+multiverse
+```
 
-The per-interface files are stored under:
+اگر راه‌انداز قبلاً به علت نبود میان‌افزار شکست خورده باشد، پس از فراهم‌شدن فایل لازم، فقط همان راه‌انداز دوباره بارگذاری می‌شود؛ این کار تنها هنگامی انجام می‌شود که هیچ رابط بی‌سیمی وجود نداشته باشد.
+
+```bash
+rmmod b43
+modprobe b43
+```
+
+ماژول‌های گذرگاه، کارت کابلی و وابستگی‌های دیگر به این منظور حذف نمی‌شوند. تعارض راه‌انداز، منع صریح بارگذاری یا هستهٔ ناسازگار به‌صورت خطا گزارش می‌شود؛ برنامه این تنظیمات را حدسی تغییر نمی‌دهد.
+
+## اتصال چگونه انجام می‌شود؟
+
+### حالت مدیر شبکهٔ دسکتاپ
+
+```text
+NetworkManager
+```
+
+برنامه یک نمایهٔ بی‌سیم جدید ایجاد می‌کند و رمز را از طریق درخواست امن ابزار همان مدیر شبکه می‌گیرد. اگر اتصال ناموفق باشد، نمایهٔ تازه حذف می‌شود. پس از موفقیت، اتصال خودکار نمایه فعال می‌شود.
+
+### حالت سرویس شبکهٔ سیستمی
+
+```text
+systemd-networkd
+```
+
+برنامه برای همان رابط، یک فایل شبکه و یک سرویس احراز هویت ایجاد می‌کند. سپس تعریف شبکه را بارگذاری و رابط بی‌سیم انتخاب‌شده را دوباره پیکربندی می‌کند.
+
+```text
+networkctl reload
+networkctl reconfigure <interface>
+```
+
+در مسیر خودکار، اعمال سراسری تنظیمات نت‌پلن و بازراه‌اندازی سرویس مدیر شبکه انجام نمی‌شود. با این حال، بارگذاری مجدد تعریف‌ها می‌تواند تغییرات معوق مدیر سیستم در فایل‌های دیگر را نیز دریافت کند؛ هم‌زمان تنظیمات شبکه را با ابزار دیگری تغییر ندهید.
+
+فایل‌های مخصوص رابط در مسیرهای زیر قرار می‌گیرند. عبارت جای‌نگهدار با نام واقعی رابط عوض می‌شود:
 
 ```text
 /etc/systemd/network/00-utu-INTERFACE.network
@@ -65,63 +165,119 @@ The per-interface files are stored under:
 /etc/systemd/system/utu-wifi-INTERFACE.service
 ```
 
-Files are private and marked as managed by this repo. Existing external files or
-a supplicant owned by another service are not overwritten/stopped. On failure,
-the tool restores its previous per-interface files/service state. Successful
-connections are enabled for subsequent boots. No reboot is automatic.
+فایل‌ها با دسترسی خصوصی ساخته می‌شوند. فایل موجودی که متعلق به این ابزار نباشد، بازنویسی نمی‌شود. سرویس احراز هویت متعلق به ابزار دیگر نیز متوقف نمی‌شود.
 
-Both paths ignore Wi-Fi DHCP default routes and DNS, keeping the existing
-internet path; networkd also disables IPv6 router advertisements. The Wi-Fi
-address is usable from its local subnet. Making Wi-Fi the primary internet route
-is a separate administrator action. Success requires association and an IPv4
-address; incorrect passwords or DHCP failure time out with an explicit error.
+در شکست اتصال، برنامه برای برگرداندن فایل‌ها و وضعیت سرویس مخصوص خودش به حالت قبلی تلاش می‌کند. بعد از اتصال موفق، سرویس برای راه‌اندازی‌های بعدی سیستم فعال می‌شود.
 
-Passwords never enter command arguments. The networkd profile stores a derived
-WPA PSK rather than the plaintext password, still protected as a secret with
-mode 0600. Open/WPA personal networks are supported. Enterprise, WEP, WPA3-only,
-captive portals and static addressing require different configuration. Hidden
-networks can be entered manually as WPA personal. Non-UTF-8 SSIDs are not listed.
+## حفظ اتصال فعلی و رمزها
 
-## Other commands
+- مدیر شبکه خودکار عوض، نصب یا فعال نمی‌شود.
+- تنظیمات کارت کابلی و تونل فعلی مستقیماً ویرایش نمی‌شوند.
+- مسیر پیش‌فرض و نام‌یابی دریافتی از وای‌فای پذیرفته نمی‌شود تا مسیر اینترنت فعلی حفظ شود.
+- در صورت مشاهدهٔ اتصال برقرار روی رابط بی‌سیم، برنامه آن را حفظ می‌کند و اتصال دیگری جایگزین نمی‌کند.
+- راه‌اندازی مجدد سیستم خودکار نیست.
+- رمز در آرگومان دستورها قرار نمی‌گیرد.
 
-```sh
+در حالت سرویس شبکهٔ سیستمی، به‌جای متن رمز، کلید مشتق‌شده ذخیره می‌شود. این کلید همچنان یک راز قابل استفاده برای اتصال است و فایلش با دسترسی زیر نگهداری می‌شود:
+
+```text
+0600
+```
+
+فایل‌های اتصال و خروجی‌هایی که ممکن است حاوی رمز باشند را عمومی منتشر نکنید.
+
+## فرمان‌ها و منوی اختیاری
+
+اجرای معمول، راه‌اندازی و اتصال خودکار را آغاز می‌کند:
+
+```bash
+bash index.sh
+```
+
+دو فرمان زیر نیز همان مسیر خودکار را اجرا می‌کنند:
+
+```bash
+bash index.sh --setup
+bash index.sh --connect
+```
+
+فقط گزارش تشخیصی؛ بدون تغییر تنظیمات:
+
+```bash
 bash index.sh --diagnose
+```
+
+نصب ابزارهای مفقود و سپس تشخیص؛ نبود رابط همچنان با وضعیت خطا گزارش می‌شود:
+
+```bash
 bash index.sh --install
+```
+
+تعمیر دستی با تأیید مرحله‌به‌مرحله:
+
+```bash
 bash index.sh --repair
+```
+
+نمایش منوی امکانات:
+
+```bash
 bash index.sh --menu
 ```
 
-Diagnosis is read-only; it reports services, hardware, drivers, interfaces, radio
-state and kernel errors. Manual `--repair` retains step confirmations. The old
-Netplan workflow is retained as `--connect-netplan` for deliberate console use;
-it is not part of automatic setup.
+در منو، گزینه‌های یک و سه پس از آماده‌کردن خودکار رابط، اسکن می‌کنند؛ گزینهٔ چهار گزارش تشخیصی، گزینهٔ پنج تعمیر مرحله‌ای، گزینهٔ شش اتصال خودکار و گزینهٔ صفر خروج است. گزینهٔ دو فقط در صورت فعال‌بودن مدیر شبکهٔ دسکتاپ و داشتن مجوز خواندن نمایه‌ها، رمزهای ذخیره‌شدهٔ آن را نشان می‌دهد.
 
-Tool packages are `iw`, `wireless-tools`, `iproute2`, `pciutils`, `rfkill`, `kmod`.
-Connection adds Python and, for networkd, wpasupplicant if missing. Package
-operations use `NEEDRESTART_MODE=l` to suppress needrestart service restarts.
-Actual Ubuntu hardware validation is still required; no universal repair of
-physical faults or unsupported drivers is promised.
+مسیر قدیمی اتصال با نت‌پلن برای استفادهٔ آگاهانه از کنسول نگه داشته شده و جزو راه‌اندازی خودکار نیست:
 
-## Development checks
+```bash
+bash index.sh --connect-netplan
+```
 
-```sh
+این مسیر ممکن است رابط‌های دیگر را نیز دوباره پیکربندی کند و در نشست راه‌دور تشخیص‌داده‌شده متوقف می‌شود.
+
+## خطاهای رایج
+
+### رابط بی‌سیم وجود ندارد
+
+تشخیص‌داده‌شدن کارت در گذرگاه به معنای راه‌اندازی موفق بخش بی‌سیم نیست. برنامه برای کارت پشتیبانی‌شده، تعمیر شناخته‌شده را امتحان می‌کند. اگر متوقف شد، خروجی کامل تشخیص را بررسی کنید:
+
+```bash
+bash index.sh --diagnose
+```
+
+### رابط پایین است
+
+در نسخهٔ فعلی، اجرای معمول برنامه و اسکن از منو، رابط را خودکار فعال می‌کند. اگر هنوز خطای پایین‌بودن رابط دیده می‌شود، نسخهٔ مخزن را به‌روز کنید؛ خطاهای راه‌انداز یا مسدودبودن رادیو نیز باید بررسی شوند.
+
+### رمز اشتباه است یا نشانی دریافت نمی‌شود
+
+رمز، نوع امنیت شبکه و فعال‌بودن تخصیص خودکار نشانی در مودم را بررسی کنید و دوباره برنامه را اجرا کنید. در مسیر سرویس شبکهٔ سیستمی، پس از چهل‌وپنج ثانیه انتظار ناموفق برای اتصال و نشانی، خطا گزارش می‌شود.
+
+### اتصال برقرار است ولی اینترنت از وای‌فای عبور نمی‌کند
+
+این رفتار عمدی است: برنامه مسیر اینترنت سرور را خودکار تغییر نمی‌دهد. نشانی بی‌سیم برای دسترسی در زیرشبکهٔ محلی قابل استفاده است؛ جابه‌جاکردن مسیر اصلی اینترنت کار جداگانهٔ مدیر سیستم است.
+
+### نوع شبکه پشتیبانی نمی‌شود
+
+شبکه‌های باز و شخصی رمزدار پشتیبانی می‌شوند. شبکهٔ سازمانی، رمزنگاری قدیمی، شبکهٔ صرفاً مبتنی بر نسل سوم امنیت بی‌سیم، ورود از صفحهٔ وب و نشانی‌دهی ثابت به تنظیمات متفاوت نیاز دارند. نام شبکه‌هایی که با رمزگذاری متنی پشتیبانی‌شده قابل نمایش نیستند، در فهرست نمی‌آید.
+
+## آزمون‌های توسعه
+
+```bash
 bash -n index.sh
 bash tests/wifi_test.sh
 python3 -m unittest discover -s tests -p 'test_*.py'
 ```
 
-Tests mock privileged operations and cover automatic preparation, stale b43 probe
-recovery, failed package installation, scoped connection, rollback, scan parsing,
-secret handling, and preserving default-route/DNS configuration. The legacy
-Netplan profile tests require PyYAML.
+آزمون‌ها عملیات مدیریتی را شبیه‌سازی می‌کنند و آماده‌سازی رابط، تلاش مجدد راه‌انداز، شکست نصب، تشخیص شبکه، حفاظت از رمز و بازگردانی اتصال ناموفق را بررسی می‌کنند. آزمون نمایهٔ قدیمی به کتابخانهٔ زیر نیاز دارد:
 
-References: [b43 driver](https://wireless.docs.kernel.org/en/latest/en/users/drivers/b43.html),
-[systemd networkctl](https://www.freedesktop.org/software/systemd/man/latest/networkctl.html),
-[systemd network configuration](https://www.freedesktop.org/software/systemd/man/latest/systemd.network.html).
+```text
+PyYAML
+```
 
-## Reported diagnostic output
+## نمونهٔ گزارش اولیهٔ کاربر
 
-User-provided baseline:
+این خروجی وضعیت پیش از تعمیر را نشان می‌دهد و تأیید آزمایش نسخهٔ فعلی روی این سخت‌افزار نیست:
 
 ```text
 Ubuntu 24.04.5 LTS
