@@ -55,6 +55,7 @@ fail() { echo "FAIL: $*" >&2; exit 1; }
 )
 (
     find_interface() { echo wlan0; }
+    prepare_wifi() { :; }
     command() { return 0; }
     as_root() { echo 'RF-kill blocked' >&2; return 1; }
     output=$(scan_wifi 2>&1) && fail 'scan failure reported success'
@@ -162,3 +163,42 @@ echo 'Firmware failure stops module loading.'
     ((repaired)) || fail 'driver never loaded'
 )
 echo 'Supported BCM4331 firmware/load path passed.'
+# A stale b43 probe is retried without removing its bus/network dependencies.
+(
+    loads=0
+    install_dependencies() { :; }
+    lspci() { echo 'Network controller [14e4:4331]'; }
+    rfkill() { :; }
+    find_interfaces() { if ((loads >= 2)); then echo wlp3s0b1; fi; }
+    module_loaded() { [[ $1 == b43 ]]; }
+    firmware_ready() { return 0; }
+    modprobe() { [[ $1 == --showconfig ]]; }
+    modinfo() { :; }
+    grep() { [[ ${*: -1} == /proc/cmdline ]] && return 1; command grep "$@"; }
+    confirm_action() { :; }
+    install_packages() { fail 'existing firmware unnecessarily downloaded'; }
+    as_root() {
+        case $1 in
+            journalctl|udevadm) : ;;
+            modprobe) [[ $2 == b43 ]] || fail 'wrong module loaded'; loads=$((loads+1)) ;;
+            rmmod) [[ $# == 2 && $2 == b43 ]] || fail 'dependency removal attempted' ;;
+            *) fail "Unexpected operation: $*" ;;
+        esac
+    }
+    diagnose() { [[ $(find_interfaces) == wlp3s0b1 ]]; }
+    repair_wifi >/dev/null || fail 'stale probe recovery failed'
+)
+(
+    install_dependencies() { :; }
+    find_interfaces() { echo wlp3s0b1; }
+    find_interface() { echo wlp3s0b1; }
+    as_root() { [[ $* == 'ip link set dev wlp3s0b1 up' ]] || fail "Unexpected prepare operation: $*"; }
+    repair_wifi() { fail 'repair invoked for existing interface'; }
+    prepare_wifi || fail 'down interface was not prepared'
+)
+(
+    automatic_connect() { echo automatic; }
+    [[ $(main) == automatic ]] || fail 'default entry does not use automatic flow'
+    [[ $(main --connect) == automatic ]] || fail 'connect entry does not use automatic flow'
+)
+echo 'Automatic preparation and stale-probe recovery passed.'

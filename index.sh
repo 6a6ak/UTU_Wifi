@@ -119,6 +119,10 @@ diagnose() {
 
 # Mutating operations are opt-in and never unload a module or restart a manager.
 confirm_action() {
+    if [[ ${AUTOMATIC_SETUP:-0} == 1 ]]; then
+        echo "$1"
+        return 0
+    fi
     local answer
     read -r -p "$1 Type YES to continue: " answer || return 1
     [[ $answer == YES ]]
@@ -138,7 +142,7 @@ repair_wifi() {
     printf '%s\n' "$logs" | grep -Ei 'b43|bcma|brcm|firmware|80211|verification|key was rejected' | tail -n 80
     echo 'Radio state:'
     rfkill list
-    echo 'Repair never removes drivers, edits blacklists, restarts managers or reboots.'
+    echo 'Repair never replaces drivers, edits blacklists, restarts managers or reboots.'
     if [[ -n $(find_interfaces) ]]; then
         interface=$(find_interface) || return 1
         if rfkill list wifi | grep -q 'Hard blocked: yes'; then
@@ -180,6 +184,7 @@ repair_wifi() {
         install_packages "linux-modules-extra-$(uname -r)" || return 1
         modinfo b43 >/dev/null 2>&1 || { echo 'This kernel still has no b43 module; use a supported Ubuntu kernel.'; return 1; }
     fi
+    if ! firmware_ready; then
     echo 'BCM4331 repair: install/reconfigure b43 firmware, then load b43 without unloading any driver.'
     confirm_action 'Install firmware-b43-installer and load b43?' || return 1
     if ! apt-cache show firmware-b43-installer >/dev/null 2>&1; then
@@ -200,11 +205,19 @@ repair_wifi() {
     }
     # Re-run the downloader even when dpkg considers the installer already installed.
     as_root env NEEDRESTART_MODE=l dpkg-reconfigure -f noninteractive firmware-b43-installer || return 1
+    fi
     as_root modprobe b43 || {
         echo 'Loading b43 failed. Check module availability, signature/Secure Boot errors and kernel logs.'
         return 1
     }
     command -v udevadm >/dev/null 2>&1 && as_root udevadm settle --timeout=10
+    if [[ -z $(find_interfaces) ]] && module_loaded b43 && firmware_ready; then
+        confirm_action 'Retry the failed b43 probe (only b43, with no wireless interfaces present)?' || return 1
+        # rmmod targets exactly b43: unlike modprobe -r it cannot remove dependencies.
+        as_root rmmod b43 || return 1
+        as_root modprobe b43 || return 1
+        command -v udevadm >/dev/null 2>&1 && as_root udevadm settle --timeout=10
+    fi
     if [[ -z $(find_interfaces) ]]; then
         echo 'No interface appeared. A previously failed probe may need a controlled reboot or driver reload; neither is automatic.'
         as_root journalctl -k -b --no-pager | grep -Ei 'b43|bcma|firmware|verification' | tail -n 60
@@ -215,6 +228,41 @@ repair_wifi() {
 }
 
 module_loaded() { [[ -d /sys/module/$1 ]]; }
+firmware_ready() { [[ -s /lib/firmware/b43/ucode29_mimo.fw ]]; }
+
+prepare_wifi() {
+    local AUTOMATIC_SETUP=1 interface
+    install_dependencies || return 1
+    if [[ -z $(find_interfaces) ]]; then repair_wifi || return 1; fi
+    interface=$(find_interface) || return 1
+    # Unblock only the radio associated with this interface.
+    local phy radio
+    if [[ -e /sys/class/net/$interface/phy80211 ]]; then
+        phy=$(basename "$(readlink -f "/sys/class/net/$interface/phy80211")")
+        for radio in /sys/class/rfkill/rfkill*; do
+            [[ -r $radio/name ]] || continue
+            if [[ $(cat "$radio/name") == "$phy" ]]; then
+                if [[ $(cat "$radio/hard") == 1 ]]; then
+                    echo 'Wi-Fi is hardware blocked. Enable the physical/BIOS radio.' >&2
+                    return 1
+                fi
+                as_root rfkill unblock "${radio##*rfkill}" || return 1
+            fi
+        done
+    fi
+    as_root ip link set dev "$interface" up
+}
+
+automatic_connect() {
+    prepare_wifi || return 1
+    local interface
+    interface=$(find_interface) || return 1
+    if ! command -v python3 >/dev/null 2>&1; then install_packages python3 || return 1; fi
+    if systemctl is-active --quiet systemd-networkd && ! command -v wpa_supplicant >/dev/null 2>&1; then
+        install_packages wpasupplicant || return 1
+    fi
+    as_root python3 "$(dirname -- "${BASH_SOURCE[0]}")/wifi_connect.py" "$interface"
+}
 
 connect_wifi() (
     local interface ssid config existing profile security
@@ -288,6 +336,7 @@ connect_wifi() (
 
 scan_wifi() {
     local interface output
+    prepare_wifi || return 1
     interface=$(find_interface) || { diagnose; return 1; }
     command -v iw >/dev/null 2>&1 || {
         echo 'Missing iw. Run: bash index.sh --install' >&2
@@ -298,7 +347,7 @@ scan_wifi() {
         printf '%s\n' "$output" | grep -E 'BSS |SSID:|freq:|signal:'
     else
         printf '%s\n' "$output" >&2
-        echo 'Scan failed. Check --diagnose for rfkill and link state. An administrator must explicitly bring up a down interface.' >&2
+        echo 'Scan failed after automatic interface preparation. Check --diagnose for driver or radio errors.' >&2
         return 1
     fi
 }
@@ -328,9 +377,10 @@ main() {
         --install) install_dependencies && diagnose; return $? ;;
         --diagnose) diagnose; return $? ;;
         --repair) repair_wifi; return $? ;;
-        --connect) connect_wifi; return $? ;;
-        --help) echo 'Usage: bash index.sh [--install|--diagnose|--repair|--connect|--help]'; return 0 ;;
-        '') ;;
+        --connect|--setup|'') automatic_connect; return $? ;;
+        --menu) ;;
+        --connect-netplan) connect_wifi; return $? ;;
+        --help) echo 'Usage: bash index.sh [--setup|--menu|--install|--diagnose|--repair|--connect|--connect-netplan|--help]'; return 0 ;;
         *) echo "Unknown option: $1" >&2; return 2 ;;
     esac
     check_dependencies || { install_dependencies || return 1; }
@@ -343,7 +393,7 @@ main() {
             2) show_passwords ;;
             4) diagnose ;;
             5) repair_wifi ;;
-            6) connect_wifi ;;
+            6) automatic_connect ;;
             0) break ;;
             *) echo 'Invalid choice.' ;;
         esac
